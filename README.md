@@ -54,11 +54,11 @@ import utils
 # load ways for p=1 in h=1 and combine it for p=3
 w_h1n8p1 = utils.load_ways("../patterns/w_h1n8p1.dat")
 w_h1n8p3 = utils.combine_hyperplanes(w_h1n8p1, 3)
-w_linear = w_h1n8p3 # easy name
+w_linear = w_h1n8p3 # easier name
 
 # load ways for p=1 in h=3
 w_h3n8p1 = utils.load_ways("../patterns/w_h3n8p1_cube.dat")
-w_cube = w_h3n8p1 # easy name
+w_cube = w_h3n8p1 # easier name
 
 print(w_linear.shape[0], w_cube.shape[0])
 # 128 104
