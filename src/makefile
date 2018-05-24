@@ -1,5 +1,5 @@
 create_edges:
 	gcc -o create_edges create_edges.c
 
-graph:
-	g++ -o graph graph.cpp --std=c++11
+disconnect_graph:
+	g++ -o disconnect_graph disconnect_graph.cpp --std=c++11
