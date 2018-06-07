@@ -1,5 +1,6 @@
 #!/usr/env python
 
+# http://docs.sympy.org/latest/modules/combinatorics/polyhedron.html
 from sympy.combinatorics import Polyhedron
 from urllib.request import urlopen
 import re
