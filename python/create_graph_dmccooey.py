@@ -6,9 +6,11 @@ from urllib.request import urlopen
 import re
 import sys
 
+def download_polyhedron(url):
+    return urlopen(url).read().decode('utf-8')
+
 #url = 'http://dmccooey.com/polyhedra/DualGeodesicIcosahedron1.txt'
-def read_polyhedron(url):
-    poly_str = urlopen(url).read().decode('utf-8')
+def build_polyhedron(poly_str):
     reading_faces = False
     faces = []
     for line in poly_str.split('\n'):
@@ -29,7 +31,8 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print(' usage:\n \t%s url' % sys.argv[0])
         exit(1)
-    poly = read_polyhedron(sys.argv[1])
+    poly_data = download_polyhedron(sys.argv[1])
+    poly = build_polyhedron(poly_data)
     print_edges(poly)
 
 
