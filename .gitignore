@@ -1,0 +1,6 @@
+# Swap files
+*.swp
+
+# C++ binary
+src/create_edges
+src/disconnect_graph
