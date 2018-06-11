@@ -39,43 +39,83 @@ def read_vertices(text, variables=None):
     print('Done')
     return np.array(vertices).astype(np.float128)
 
-def check_coplanarity(vertices, poly, query):
-    edges = np.array([e for e in poly.edges]).astype(int)
-    edges = edges[np.array(query).astype(int)]
-    middle = (vertices[edges[:,0]] + vertices[edges[:,1]]) / 2
-    vectors = middle - middle[0]
-    v = np.cross(vectors[1], vectors[2])
-    dot = np.dot(vectors, v)
-    print(dot)
-    return np.allclose(dot, 0)
+def adj_list(P):
+    adj_l = [[]] * len(P.vertices)
+    for i,j in P.edges:
+        adj_l[i].append(j)
+        adj_l[j].append(i)
+    return adj_l
 
-def main(url, query=None):
-    poly_data = dmc.download_polyhedron(url)
-    poly = dmc.build_polyhedron(poly_data)
-    blocks = poly_data.split('\n\n')
-    if len(blocks) > 3:
-        variables = read_variables(blocks[1])
-        vertices = read_vertices(blocks[2], variables)
-    else:
-        vertices = read_vertices(blocks[1])
+class Poly(object):
+    def __init__(self, url):
+        self.vertices = []
+        self.adj_l = []
+        self.edges = []
+        self.mid = []
+        self.url = url
 
-    if not query:
-        print(vertices)
-        print('\n'.join('%d: %s' % (i,str(e)) for i,e in enumerate(poly.edges)))
-    else:
-        if check_coplanarity(vertices, poly, query):
-            print("Edges' middle points are coplanar")
-        else:
-            print("Edges' middle points are NOT coplanar")
+        # Download text from url
+        self.poly_txt = dmc.download_polyhedron(url)
+
+        # Build SymPy Polyhedron using the given faces
+        self.P = dmc.build_polyhedron(self.poly_txt)
+
+    def prepare_to_check(self):
+        # Divide downloaded text and read the variables/vertices block
+        blocks = self.poly_txt.split('\n\n')
+        variables = read_variables(blocks[1]) if len(blocks) > 3 else None
+        self.vertices = read_vertices(blocks[-2], variables)
+
+        # Build adjacency list of edges (from SymPy's Polyhedron)
+        self.adj_l = adj_list(self.P)
+
+        # Build array of edges and compute midpoints for each one of them
+        self.edges = np.array([e for e in self.P.edges]).astype(int)
+        self.mid = (self.vertices[self.edges[:,0]] + self.vertices[self.edges[:,1]]) / 2
+
+    def check_coplanarity(self, query):
+        # Compute the difference vectors between the queried edges and the 1st midpoint
+        query_mid = self.mid[np.array(query)]
+        vectors = query_mid - query_mid[0]
+
+        # Cross product between the 1st and 2nd difference vectors (pos. 0 is (0,0))
+        # '-> results in the orthogonal vector in relation to the plane
+        v = np.cross(vectors[1], vectors[2])
+
+        # Dot product between the ortog. vector and every vector
+        # '-> results in 0 if vector is in the plane
+        dot = np.dot(vectors, v)
+        return np.allclose(dot, 0)
+
+    def query_from_file(self, filename):
+        count = 0
+        ways = np.loadtxt(filename).astype(int)
+        for way in ways:
+            removed_edges = [way[v] != way[w] for v,w in self.edges]
+            query = np.where(removed_edges)[0]
+            print(query)
+            if query.size == 0: continue
+            if not self.check_coplanarity(query):
+                print(way, ' -> not linear')
+                count += 1
+            else:
+                print(way, ' -> linear')
+        print(count, ' not linear')
+
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 3:
         url = sys.argv[1]
-        main(url)
-    elif len(sys.argv) == 3:
-        url = sys.argv[1]
-        query = sys.argv[2].split(',')
-        main(url, query)
+        filename = sys.argv[2]
+
+        print("-> Creating object")
+        P = Poly(url)
+
+        print("-> Preparing to check")
+        P.prepare_to_check()
+
+        print("-> Querying from file")
+        P.query_from_file(filename)
     else:
-        print(' usage:\n \t%s url [query]' % sys.argv[0])
+        print(' usage:\n \t%s url file' % sys.argv[0])
         exit(1)
