@@ -1,8 +1,22 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
-#include <array>
 #include <stdio.h>
+#include <iomanip>
+#include <ctime>
+
+// http://en.cppreference.com/w/cpp/container/vector/vector
+template<typename T>
+std::ostream& operator<<(std::ostream& s, const std::vector<T>& v) {
+	//s.put('[');
+    char comma[2] = {'\0', '\0'};
+    for (const auto& e : v) {
+        s << comma << std::setw(2) << e;
+		comma[0] = ' ';
+    }
+    return s;
+}
 
 class Graph {
 	public:
@@ -10,19 +24,18 @@ class Graph {
 		~Graph();
 
 		int get_E();
-		int get_count_ways();
+		int get_ways_size();
 		void set_debug(int debug);
-		void load(char *filename);
-		void insert_edge(int u, int v);
-		void remove_edge(int u, int v);
-		void print_graph();
-		void iterate_edges(int cur, int depth);
+		void load(const char *filename);
+		void insert_edge(const int& u, const int& v);
+		void remove_edge(const int& u, const int& v);
+		void iterate_edges(const int cur, int depth);
 		void CC();
 		void DFS(int v);
-		void print_CC();
 		void add_if_new();
+		void print_graph();
+		void print_CC();
 		void print_ways();
-		void print_edges_cut();
 
 	private:
 		int V;
@@ -31,26 +44,25 @@ class Graph {
 		int max_CC;
 		int max_depth;
 		int count;
-		int count_ways;
 		int debug;
-		std::vector<std::vector<int>> edges_cut;
-		std::vector<int> *adj;
-		std::vector<std::array<int,2>> edges;
+		std::vector<int> *adj_l;
+		std::vector<std::vector<int>> edges;
 		std::vector<int> id;
 		std::vector<bool> marked;
 		std::vector<std::vector<int>> ways;
 };
 
-Graph::Graph(int V, int h) : id(V, -1), marked(V, false) {
+Graph::Graph(int V, int h) : id(V, -1),	marked(V, false) {
 	this->V = V;
 	this->E = 0;
 	this->h = h;
 	this->max_CC = 2;
 	this->max_depth = 0;
 	this->count = 0;
-	this->count_ways = 0;
 	this->debug = false;
-	this->adj = new std::vector<int>[V];
+	this->adj_l = new std::vector<int>[V];
+	ways.emplace_back(std::vector<int>(V,0));
+	ways.emplace_back(std::vector<int>(V,1));
 }
 
 Graph::~Graph() {}
@@ -59,22 +71,21 @@ int Graph::get_E() { return this->E; }
 
 void Graph::set_debug(int debug) { this->debug = debug; }
 
-int Graph::get_count_ways() { return count_ways; }
+int Graph::get_ways_size() { return ways.size(); }
 
-void Graph::insert_edge(int v, int w) {
-	adj[v].push_back(w);
-	adj[w].push_back(v);
-	E++;
+void Graph::insert_edge(const int& v, const int& w) {
+	adj_l[v].emplace_back(w);
+	adj_l[w].emplace_back(v);
 }
 
-
-void Graph::remove_edge(int v, int w) {
-	adj[v].erase(remove(adj[v].begin(), adj[v].end(), w), adj[v].end());
-	adj[w].erase(remove(adj[w].begin(), adj[w].end(), v), adj[w].end());
-	E--;
+void Graph::remove_edge(const int& v, const int& w) {
+	// https://stackoverflow.com/questions/3385229/c-erase-vector-element-by-value-rather-than-by-position
+	// https://en.wikipedia.org/wiki/Erase%E2%80%93remove_idiom
+	adj_l[v].erase(std::remove(adj_l[v].begin(), adj_l[v].end(), w), adj_l[v].end());
+	adj_l[w].erase(std::remove(adj_l[w].begin(), adj_l[w].end(), v), adj_l[w].end());
 }
 
-void Graph::load(char *filename) {
+void Graph::load(const char *filename) {
 	int v, w;
 	FILE *file;
 
@@ -88,89 +99,39 @@ void Graph::load(char *filename) {
 	// read each vertice pair and add edge
 	while(fscanf(file, "%d %d", &v, &w) == 2) {
 		insert_edge(v, w);
-
-		std::array<int,2> e = {v,w};
-		edges.push_back(e);
+		edges.emplace_back(std::vector<int>{v,w});
 	}
 	fclose(file);
 
-	max_depth = E/2;
-}
-
-void Graph::print_graph() {
-	printf("\n Total of %d edges:\n", this->E);
-	for (int v = 0; v < this->V; ++v) {
-		printf(" %d ->", v);
-		for (int w : this->adj[v]) {
-			printf(" %d", w);
-		}
-		printf("\n");
+	E = edges.size();
+	if (h < 3) {
+		max_depth = h;
+	} else {
+		max_depth = E/2;
 	}
-	printf("\n");
 }
 
-void Graph::print_edges_cut() {
-	for (std::vector<int> e : edges_cut) {
-		printf(" (%d,%d)", e[0], e[1]);
-	}
-	printf("\n");
-}
+void Graph::iterate_edges(const int cur, int depth) {
+	if (depth > max_depth) return;
 
-void Graph::iterate_edges(int cur, int depth) {
-	edges_cut.reserve(edges.size());
-	if (depth >= max_depth) return;
-
-	depth++;
 	for (int i = cur; i < edges.size(); ++i) {
 		remove_edge(edges[i][0], edges[i][1]);
-		std::vector<int> e = {edges[i][0], edges[i][1]};
-		edges_cut.push_back(e);
-
-		iterate_edges(i+1, depth);
+		iterate_edges(i+1, depth+1);
 
 		if (depth >= h) { // minimum of h cuts to disconnect the graph
-			if (debug > 1) print_edges_cut();
 			CC();
-
-			if (debug > 2) print_graph();
 			if (count == max_CC) { // found max_CC components
 				add_if_new();
 			}
 		}
 
 		insert_edge(edges[i][0], edges[i][1]);
-		edges_cut.pop_back();
-	}
-	depth--;
-}
-
-void Graph::add_if_new() {
-	bool new_way = true;
-	for (std::vector<int> w : ways) {
-		if(w == id) {
-			new_way = false;
-			break;
-		}
-	}
-
-	if(new_way) {
-		ways.push_back(id);
-
-		std::for_each(id.begin(), id.end(), [](int &x){ x = !x; });
-		ways.push_back(id);
-
-		count_ways += 2;
-
-		if (debug > 0) {
-			printf(" [NEW] ");
-			print_CC();
-		}
 	}
 }
 
 void Graph::CC() {
 	std::fill(marked.begin(), marked.end(), false);
-	std::fill(id.begin(), id.end(), -1);
+	//std::fill(id.begin(), id.end(), -1);
 	count = 0;
 	for (int v = 0; v < V; ++v) {
 		if (!marked[v]) {
@@ -180,33 +141,61 @@ void Graph::CC() {
 	}
 }
 
-void Graph::DFS(int v) {
+void Graph::DFS(const int v) {
 	marked[v] = true;
 	id[v] = count-1;
-	for (int w : adj[v]) {
+	for (const int& w : adj_l[v]) {
 		if(!marked[w]) DFS(w);
 	}
+}
+
+void Graph::add_if_new() {
+	bool new_way = true;
+	for (const auto& w : ways) {
+		if(w == id) {
+			new_way = false;
+			break;
+		}
+	}
+
+	if(new_way) {
+		ways.emplace_back(id);
+
+		std::for_each(id.begin(), id.end(), [](int &x){ x = !x; });
+		ways.emplace_back(id);
+
+		if (debug > 0) {
+			printf(" [NEW] \n");
+			print_CC();
+		}
+	}
+}
+
+void Graph::print_graph() {
+	printf("\n Total of %d edges:\n", this->E);
+	for (int v = 0; v < V; ++v) {
+		printf(" %2d ->", v);
+		std::cout << adj_l[v] << '\n';
+	}
+	printf("\n");
 }
 
 void Graph::print_CC() {
 	printf(" v  ->");
 	for(int v = 0; v < V; ++v) {
-		printf("%2d ", v);
+		printf(" %2d", v);
 	}
-	printf("\n CC ->");
-	for(int i : id) {
-		printf("%2d ", i);
-	}
-	printf("\n");
+	std::cout << "\n CC -> " << id << '\n';
 }
 
 void Graph::print_ways() {
-	for (std::vector<int> w : ways) {
-		for (int c : w) {
-			printf(" %d", c);
-		}
-		printf("\n");
+	std::ofstream f;
+	f.open("ways.log");
+	std::cout << "-> Dumping ways (patterns) in 'ways.log'\n";
+	for (const auto& w : ways) {
+		f << w << '\n';
 	}
+	f.close();
 }
 
 enum {
@@ -218,13 +207,16 @@ enum {
 };
 
 int main(int argc, char **argv) {
+	double elapsed_secs;
+	clock_t begin, end;
 	if (argc != NARGS) {
 		fprintf(stderr, "usage: %s n h file\n", argv[PROGNAME]);
 		exit(EXIT_FAILURE);
 	}
+	int n = atoi(argv[N]), h = atoi(argv[H]);
 
 	printf("-> Initializing graph\n");
-	Graph G((int) atoi(argv[N]), atoi(argv[H]));
+	Graph G(n, h);
 	G.set_debug(0);
 
 	printf("-> Loading edges from %s\n", argv[3]);
@@ -234,10 +226,13 @@ int main(int argc, char **argv) {
 	G.print_graph();
 
 	printf("-> Iterating\n");
-	G.iterate_edges(0, 0);
+	begin = std::clock();
+	G.iterate_edges(0, 1);
+	end = std::clock();
+	elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+	std::cout << ' ' << elapsed_secs << "s\n";
 
-	// +2 because of all positive/negative
-	printf("\n-> %d ways of disconnecting G into 2 CC were found\n", G.get_count_ways()+2);
+	printf("\n-> %d ways of disconnecting G into 2 CC were found\n", G.get_ways_size());
 	G.print_ways();
 
 	return 0;
