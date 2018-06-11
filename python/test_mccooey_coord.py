@@ -5,7 +5,7 @@ from urllib.request import urlopen
 import create_graph_dmccooey as dmc
 
 def read_variables(text):
-    print('Reading variables... ', end='')
+    print(' Reading variables... ', end='')
     re_float = '-?(?:[0-9]+(?:\.[0-9]+)?)'
     regex = '^(\w+).*?(%s)' % (re_float)
     variables = {k:np.float128(v) for line in text.split('\n') for k,v in re.findall(regex, line)}
@@ -13,7 +13,7 @@ def read_variables(text):
     return variables
 
 def read_vertices(text, variables=None):
-    print('Reading vertices... ', end='')
+    print(' Reading vertices... ', end='')
     re_float = '-?(?:[0-9]+(?:\.[0-9]+)?)'
     re_variable = '-?(?:\w+)'
     re_float_variable = '(?:(?:%s)|(?:%s))' % (re_float, re_variable)
@@ -93,14 +93,13 @@ class Poly(object):
         for way in ways:
             removed_edges = [way[v] != way[w] for v,w in self.edges]
             query = np.where(removed_edges)[0]
-            print(query)
             if query.size == 0: continue
             if not self.check_coplanarity(query):
-                print(way, ' -> not linear')
+                print(' ', way, ' -> not linear')
                 count += 1
             else:
-                print(way, ' -> linear')
-        print(count, ' not linear')
+                print(' ', way, ' -> linear')
+        print('\n %d linear, %d not linear' % (len(ways) - count, count))
 
 
 if __name__ == '__main__':
