@@ -1,4 +1,4 @@
-# Disconnecting a graph in 2 connected components
+# Shatter functions of half-space intersections
 
 ## Files
 * `python/utils.py`: utilities to manipulate classification patterns
