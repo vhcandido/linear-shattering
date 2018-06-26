@@ -5,7 +5,7 @@ import re
 
 class Poly(object):
     def __init__(self, url):
-        self.url = url
+        self.url = url.replace('.html', '.txt') # I tend to forget this
         self.poly_txt = ''
         self.edges = None
         self.vertices = None
