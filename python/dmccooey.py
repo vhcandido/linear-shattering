@@ -3,9 +3,10 @@ from urllib.request import urlopen
 import numpy as np
 import re
 
+
 class Poly(object):
     def __init__(self, url):
-        self.url = url.replace('.html', '.txt') # I tend to forget this
+        self.url = url.replace('.html', '.txt')  # I tend to forget this
         self.poly_txt = ''
         self.edges = None
         self.vertices = None
@@ -27,7 +28,9 @@ class Poly(object):
 
         # Build array of edges and compute midpoints for each one of them
         self.edges = np.array([e for e in self.P.edges]).astype(int)
-        self.mid = (self.vertices[self.edges[:,0]] + self.vertices[self.edges[:,1]]) / 2
+        self.mid = (
+            self.vertices[self.edges[:, 0]] + self.vertices[self.edges[:, 1]]
+        ) / 2
 
     def build(self):
         self.download_file()
@@ -51,9 +54,10 @@ class Poly(object):
         count = 0
         ways = np.loadtxt(filename).astype(int)
         for way in ways:
-            removed_edges = [way[v] != way[w] for v,w in self.edges]
+            removed_edges = [way[v] != way[w] for v, w in self.edges]
             query = np.where(removed_edges)[0]
-            if query.size == 0: continue
+            if query.size == 0:
+                continue
             if not self.check_coplanarity(query):
                 print(' ', way, ' -> not linear')
                 count += 1
@@ -95,7 +99,11 @@ class Poly(object):
         """
         re_float = '-?(?:[0-9]+(?:\.[0-9]+)?)'
         regex = '^(\w+).*?(%s)' % (re_float)
-        variables = {k:np.float128(v) for line in text.split('\n') for k,v in re.findall(regex, line)}
+        variables = {
+            k: np.float128(v)
+            for line in text.split('\n')
+            for k, v in re.findall(regex, line)
+        }
 
         return variables
 
@@ -118,8 +126,10 @@ class Poly(object):
         re_variable = '-?(?:\w+)'
         re_float_variable = '(?:(?:%s)|(?:%s))' % (re_float, re_variable)
         regex = '\s*?(%s)\s*?' % (re_float_variable)
-        #regex = '^(\w+).*?\(%s,%s,%s\)' % (regex, regex, regex)
-        is_neg = np.vectorize(lambda x: (True,x[1:]) if x.startswith('-') else (False,x))
+        # regex = '^(\w+).*?\(%s,%s,%s\)' % (regex, regex, regex)
+        is_neg = np.vectorize(
+            lambda x: (True, x[1:]) if x.startswith('-') else (False, x)
+        )
 
         vertices = []
         for line in text.split('\n'):
@@ -127,7 +137,7 @@ class Poly(object):
             if variables:
                 coord = np.full(match.shape, np.nan, dtype=np.float128)
                 match_isneg, match = is_neg(match)
-                for k,v in variables.items():
+                for k, v in variables.items():
                     if k in match:
                         coord[np.where(match == k)] = v
                 i = np.where(np.isnan(coord))
@@ -139,7 +149,7 @@ class Poly(object):
 
         return np.array(vertices).astype(np.float128)
 
-    #def adjacency_list(self):
+    # def adjacency_list(self):
     #    """Build adjacency list
 
     #    Returns

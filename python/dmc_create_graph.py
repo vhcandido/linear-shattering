@@ -3,9 +3,11 @@
 import sys
 from dmccooey import Poly
 
+
 def print_edges(poly):
     for e in poly.edges:
         print('%4d %4d' % (e[0], e[1]))
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
