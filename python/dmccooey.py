@@ -40,11 +40,13 @@ class Poly(object):
         self.parse_file()
 
     def check_coplanarity(self, query):
-        # Compute the difference vectors between the queried edges and the 1st midpoint
+        # Compute the difference vectors between the queried edges and the 1st
+        # midpoint
         query_mid = self.mid[np.array(query)]
         vectors = query_mid - query_mid[0]
 
-        # Cross product between the 1st and 2nd difference vectors (pos. 0 is (0,0))
+        # Cross product between the 1st and 2nd difference vectors (pos. 0 is
+        # (0,0))
         # '-> results in the orthogonal vector in relation to the plane
         v = np.cross(vectors[1], vectors[2])
 

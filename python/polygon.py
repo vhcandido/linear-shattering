@@ -1,6 +1,6 @@
 import numpy as np
 import itertools as itt
-from utils import *
+from utils import mirror_invert, combine_hyperplanes
 
 
 def zip_circular(x):
@@ -15,7 +15,8 @@ def polygon_vertices(n, r=10):
 
 
 def polygon_edges(x, y):
-    mid = lambda v: [(i + j) / 2 for i, j in zip_circular(v)]
+    def mid(v):
+        return [(i + j) / 2 for i, j in zip_circular(v)]
     return mid(x), mid(y)
 
 

@@ -26,7 +26,7 @@ def which_not_match(m1, m2):
     # .any() compares if there's at least one line the are totally equal
     is_in = [(row == m2).all(axis=1).any() for row in m1]  # w in small
     is_in = np.array(is_in)
-    return np.where(is_in == False)[0].reshape(-1)
+    return np.where(is_in is False)[0].reshape(-1)
 
 
 # Possible combinations obtainable with p hyperplanes in h=2
