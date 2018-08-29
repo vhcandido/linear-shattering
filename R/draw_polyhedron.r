@@ -1,5 +1,6 @@
 read.v <- function(file='../draw/vertices.dat') { as.matrix(read.table(file)) }
 read.e <- function(file='../draw/edges.dat') { as.matrix(read.table(file)) }
+read.f <- function(file='../draw/faces.dat') { as.matrix(read.table(file)) }
 
 draw.poly <- function(V, E, v.col=NULL, e.col=NULL) {
 	if (is.null(v.col)) v.col <- 'black'
@@ -81,9 +82,11 @@ draw.sphere <- function(V, alpha=.4) {
 }
 
 load.poly <- function(dir='../draw') {
-	V <- as.matrix(read.table(file.path(dir, 'vertices.dat')))
-	E <- as.matrix(read.table(file.path(dir, 'edges.dat')))
-	return(list(V=V, E=E))
+	foo <- function(x) as.matrix(read.table(x))
+	V <- foo(file.path(dir, 'vertices.dat'))
+	E <- foo(file.path(dir, 'edges.dat'))
+	F. <- foo(file.path(dir, 'faces.dat'))
+	return(list(V=V, E=E, F=F.))
 }
 
 load.hyp <- function(suf='gi30', dir='../draw') {

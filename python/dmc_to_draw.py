@@ -15,6 +15,8 @@ if __name__ == '__main__':
     P = Poly(url)
     P.build()
 
-    print("-> Printing to '../draw/vertices.dat' and '../draw/edges.dat")
+    print("-> Printing to '../draw/vertices.dat', '../draw/edges.dat' and "
+          "'../draw/faces.dat'")
     np.savetxt('../draw/vertices.dat', P.vertices)
     np.savetxt('../draw/edges.dat', P.edges, fmt='%d')
+    np.savetxt('../draw/faces.dat', P.faces, fmt='%d')

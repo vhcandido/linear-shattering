@@ -8,6 +8,7 @@ class Poly(object):
     def __init__(self, url):
         self.url = url.replace('.html', '.txt')  # I tend to forget this
         self.poly_txt = ''
+        self.faces = None
         self.edges = None
         self.vertices = None
         self.mid = None
@@ -19,7 +20,9 @@ class Poly(object):
 
     def parse_file(self):
         # Build a Polyhedron (sympy) object via faces
-        self.P = self.build_Polyhedron()
+        v, faces = self.read_faces()
+        self.P = Polyhedron([*range(v)], faces)
+        self.faces = faces
 
         # Divide downloaded text and read the variables/vertices block
         blocks = self.poly_txt.split('\n\n')
@@ -65,24 +68,24 @@ class Poly(object):
                 print(' ', way, ' -> linear')
         print('\n %d linear, %d not linear' % (len(ways) - count, count))
 
-    def build_Polyhedron(self):
-        """Build a SymPy Polyhedron from McCooey's website
+    def read_faces(self):
+        """Read list of faces from McCooey's website
 
         Returns
-        sympy.combinatorics.polyhedron.Polyhedron
-            Polyhedron object built using the faces in self.poly_txt
+        -------
+            Number of vertices and a list of faces' vertices.
         """
         # Create list of faces that will be passed to Polyhedron's constructor
         faces = []
         for line in re.split('Faces:.*?\n', self.poly_txt)[1].split('\n'):
             if line:
-                face = [int(i) for i in re.findall('(\d+)', line)]
+                face = [*map(int, re.findall('(\d+)', line))]
                 faces.append(face)
 
         # Count how many vertices are defined
         v = len(re.findall('V', self.poly_txt))
 
-        return Polyhedron([*range(v)], faces)
+        return v, faces
 
     def read_variables(self, text):
         """Read variables' values (following McCooey's website format)
